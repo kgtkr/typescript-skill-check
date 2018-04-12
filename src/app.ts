@@ -88,6 +88,7 @@ class MyCompilerHost extends MyLanguageServiceHost implements ts.CompilerHost {
 }
 
 function serializeType(type: ts.Type) {
+  console.log(type);
   switch (type.getFlags()) {
     case ts.TypeFlags.Any:
       return { type: "any" };
@@ -97,15 +98,11 @@ function serializeType(type: ts.Type) {
       return { type: "number" };
     case ts.TypeFlags.Boolean:
       return { type: "boolean" };
-    case ts.TypeFlags.Enum:
-      break;
     case ts.TypeFlags.StringLiteral:
       break;
     case ts.TypeFlags.NumberLiteral:
       break;
     case ts.TypeFlags.BooleanLiteral:
-      break;
-    case ts.TypeFlags.EnumLiteral:
       break;
     case ts.TypeFlags.ESSymbol:
       return { type: "symbol" };
@@ -117,8 +114,6 @@ function serializeType(type: ts.Type) {
       return { type: "undefined" };
     case ts.TypeFlags.Null:
       return { type: "null" };
-    case ts.TypeFlags.TypeParameter:
-      break;
     case ts.TypeFlags.Object:
       break;
     case ts.TypeFlags.Union:
@@ -131,8 +126,6 @@ function serializeType(type: ts.Type) {
       break;
     case ts.TypeFlags.NonPrimitive:
       break;
-    case ts.TypeFlags.MarkerType:
-      break;
     case ts.TypeFlags.Literal:
       break;
     case ts.TypeFlags.Unit:
@@ -141,21 +134,9 @@ function serializeType(type: ts.Type) {
       break;
     case ts.TypeFlags.PossiblyFalsy:
       break;
-    case ts.TypeFlags.StringLike:
-      break;
-    case ts.TypeFlags.NumberLike:
-      break;
-    case ts.TypeFlags.BooleanLike:
-      break;
-    case ts.TypeFlags.EnumLike:
-      break;
-    case ts.TypeFlags.ESSymbolLike:
-      break;
     case ts.TypeFlags.UnionOrIntersection:
       break;
     case ts.TypeFlags.StructuredType:
-      break;
-    case ts.TypeFlags.StructuredOrTypeVariable:
       break;
     case ts.TypeFlags.TypeVariable:
       break;
