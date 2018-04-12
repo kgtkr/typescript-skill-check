@@ -1,0 +1,17 @@
+{
+  "name": "typescript-skill-check",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "kgtkr",
+  "license": "AGPL-3.0",
+  "dependencies": {
+    "typescript": "^2.7.1"
+  },
+  "devDependencies": {
+    "@types/node": "^9.4.4"
+  }
+}
