@@ -140,8 +140,8 @@ function serializeType(type: ts.Type): any {
       break;
     case ts.TypeFlags.Narrowable:
       break;
-    case ts.TypeFlags.NotUnionOrUnit:
-      break;
+    case ts.TypeFlags.Never:
+      return { type: "never" };
     default:
       throw new Error("未知の型");
   }
@@ -149,7 +149,7 @@ function serializeType(type: ts.Type): any {
 
 
 //const source = "type Main<T>=T;";
-const source = "type Main={x:number}&{y:string}|true";
+const source = "type Main={readonly x:number}";
 const host = new MyCompilerHost();
 host.addFile("lib.d.ts", libdts);
 host.addFile("main.ts", source);
