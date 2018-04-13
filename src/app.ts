@@ -88,7 +88,6 @@ class MyCompilerHost extends MyLanguageServiceHost implements ts.CompilerHost {
 }
 
 function serializeType(type: ts.Type): any {
-  console.log(type);
   switch (type.getFlags()) {
     case ts.TypeFlags.Any:
       return { type: "any" };
@@ -115,9 +114,12 @@ function serializeType(type: ts.Type): any {
     case ts.TypeFlags.Null:
       return { type: "null" };
     case ts.TypeFlags.Object:
-      console.log(Array.from(type.symbol!.members!.entries() as any as Iterable<[string, ts.Symbol]>)
-        .map(([name, s]) => [name, serializeType(checker.getTypeOfSymbolAtLocation(s, s.valueDeclaration!))]))
-      return { type: "object" };
+      return {
+        type: "object",
+        members: Array.from(type.symbol!.members!.entries() as any as Iterable<[string, ts.Symbol]>)
+          .map<[string, any]>(([name, s]) => [name, serializeType(checker.getTypeOfSymbolAtLocation(s, s.valueDeclaration!))])
+          .map(([name, type]) => ({ name, type }))
+      };
     case ts.TypeFlags.Union:
       return { type: "union", types: (type as ts.UnionType).types.map(x => serializeType(x)) };
     case ts.TypeFlags.Intersection:
@@ -147,7 +149,7 @@ function serializeType(type: ts.Type): any {
 
 
 //const source = "type Main<T>=T;";
-const source = "type Main=1|'a'|true";
+const source = "type Main={x:number}&{y:string}|true";
 const host = new MyCompilerHost();
 host.addFile("lib.d.ts", libdts);
 host.addFile("main.ts", source);
@@ -162,10 +164,8 @@ for (const sourceFile of program.getSourceFiles()) {
       if (ts.isTypeAliasDeclaration(node) && node.name) {
         let symbol = checker.getSymbolAtLocation(node.name)!;
         const type = checker.getDeclaredTypeOfSymbol(symbol);
-        console.log(serializeType(type));
+        console.log(JSON.stringify(serializeType(type), undefined, 2));
       }
     });
   }
 }
-
-
