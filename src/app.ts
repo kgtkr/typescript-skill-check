@@ -114,6 +114,7 @@ function serializeType(type: ts.Type): any {
     case ts.TypeFlags.Null:
       return { type: "null" };
     case ts.TypeFlags.Object:
+      const a = type.symbol!.members!;
       return {
         type: "object",
         members: Array.from(type.symbol!.members!.entries() as any as Iterable<[string, ts.Symbol]>)
@@ -149,7 +150,7 @@ function serializeType(type: ts.Type): any {
 
 
 //const source = "type Main<T>=T;";
-const source = "type Main={readonly x:number}";
+const source = "type Main={x:number,y:number}";
 const host = new MyCompilerHost();
 host.addFile("lib.d.ts", libdts);
 host.addFile("main.ts", source);
