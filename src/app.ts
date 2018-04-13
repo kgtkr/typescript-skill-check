@@ -87,7 +87,7 @@ class MyCompilerHost extends MyLanguageServiceHost implements ts.CompilerHost {
   }
 }
 
-function serializeType(type: ts.Type) {
+function serializeType(type: ts.Type): any {
   console.log(type);
   switch (type.getFlags()) {
     case ts.TypeFlags.Any:
@@ -99,11 +99,11 @@ function serializeType(type: ts.Type) {
     case ts.TypeFlags.Boolean:
       return { type: "boolean" };
     case ts.TypeFlags.StringLiteral:
-      break;
+      return { type: "string-literal", value: (type as ts.StringLiteralType).value };
     case ts.TypeFlags.NumberLiteral:
-      break;
+      return { type: "number-literal", value: (type as ts.NumberLiteralType).value };
     case ts.TypeFlags.BooleanLiteral:
-      break;
+      return { type: "boolean-literal", value: (type as any).intrinsicName === "true" };
     case ts.TypeFlags.ESSymbol:
       return { type: "symbol" };
     case ts.TypeFlags.UniqueESSymbol:
@@ -115,17 +115,13 @@ function serializeType(type: ts.Type) {
     case ts.TypeFlags.Null:
       return { type: "null" };
     case ts.TypeFlags.Object:
-      break;
+      console.log(Array.from(type.symbol!.members!.entries() as any as Iterable<[string, ts.Symbol]>)
+        .map(([name, s]) => [name, serializeType(checker.getTypeOfSymbolAtLocation(s, s.valueDeclaration!))]))
+      return { type: "object" };
     case ts.TypeFlags.Union:
-      return { type: "union", types: type.getProperties() };
+      return { type: "union", types: (type as ts.UnionType).types.map(x => serializeType(x)) };
     case ts.TypeFlags.Intersection:
-      break;
-    case ts.TypeFlags.Index:
-      break;
-    case ts.TypeFlags.IndexedAccess:
-      break;
-    case ts.TypeFlags.NonPrimitive:
-      break;
+      return { type: "intersection", types: (type as ts.UnionType).types.map(x => serializeType(x)) };
     case ts.TypeFlags.Literal:
       break;
     case ts.TypeFlags.Unit:
@@ -151,7 +147,7 @@ function serializeType(type: ts.Type) {
 
 
 //const source = "type Main<T>=T;";
-const source = "type Main=string?;";
+const source = "type Main=1|'a'|true";
 const host = new MyCompilerHost();
 host.addFile("lib.d.ts", libdts);
 host.addFile("main.ts", source);
@@ -166,11 +162,7 @@ for (const sourceFile of program.getSourceFiles()) {
       if (ts.isTypeAliasDeclaration(node) && node.name) {
         let symbol = checker.getSymbolAtLocation(node.name)!;
         const type = checker.getDeclaredTypeOfSymbol(symbol);
-        console.log({
-          name: symbol.getName(),
-          flag: ts.TypeFlags[type.getFlags()],
-          type: type.getProperties()
-        });
+        console.log(serializeType(type));
       }
     });
   }
