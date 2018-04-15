@@ -166,12 +166,9 @@ function serializeType(type: ts.Type, count: number): Type {
       throw new Error("未対応の型:" + type.getFlags());
   }
 }
-//TODO:配列、タプル
 const source = `
-type Hoge<T> = T extends number ? {x:"num"} : {y:"o"};
-type Main=Hoge<1>;
+type Main={};
 `;
-
 const host = new MyCompilerHost();
 host.addFile("lib.d.ts", libdts);
 host.addFile("main.ts", source);
