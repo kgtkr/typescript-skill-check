@@ -87,7 +87,10 @@ class MyCompilerHost extends MyLanguageServiceHost implements ts.CompilerHost {
   }
 }
 
-function serializeType(type: ts.Type): any {
+function serializeType(type: ts.Type, count: number): any {
+  if (count > 1024) {
+    throw new Error("型のネストが深すぎます");
+  }
   switch (type.getFlags()) {
     case ts.TypeFlags.Any:
       return { type: "any" };
@@ -105,8 +108,6 @@ function serializeType(type: ts.Type): any {
       return { type: "boolean-literal", value: (type as any).intrinsicName === "true" };
     case ts.TypeFlags.ESSymbol:
       return { type: "symbol" };
-    case ts.TypeFlags.UniqueESSymbol:
-      break;
     case ts.TypeFlags.Void:
       return { type: "void" };
     case ts.TypeFlags.Undefined:
@@ -118,45 +119,27 @@ function serializeType(type: ts.Type): any {
       return {
         type: "object",
         members: Array.from(type.symbol!.members!.entries() as any as Iterable<[string, ts.Symbol]>)
-          .map<[string, any]>(([name, s]) => [name, serializeType(checker.getTypeOfSymbolAtLocation(s, s.valueDeclaration!))])
+          .map<[string, any]>(([name, s]) => [name, serializeType(checker.getTypeOfSymbolAtLocation(s, s.valueDeclaration!), count + 1)])
           .map(([name, type]) => ({ name, type }))
       };
     case ts.TypeFlags.Union:
-      return { type: "union", types: (type as ts.UnionType).types.map(x => serializeType(x)) };
+      return { type: "union", types: (type as ts.UnionType).types.map(x => serializeType(x, count + 1)) };
     case ts.TypeFlags.Intersection:
-      return { type: "intersection", types: (type as ts.UnionType).types.map(x => serializeType(x)) };
-    case ts.TypeFlags.Literal:
-      break;
-    case ts.TypeFlags.Unit:
-      break;
-    case ts.TypeFlags.StringOrNumberLiteral:
-      break;
-    case ts.TypeFlags.PossiblyFalsy:
-      break;
-    case ts.TypeFlags.UnionOrIntersection:
-      break;
-    case ts.TypeFlags.StructuredType:
-      break;
-    case ts.TypeFlags.TypeVariable:
-      break;
-    case ts.TypeFlags.Narrowable:
-      break;
+      return { type: "intersection", types: (type as ts.UnionType).types.map(x => serializeType(x, count + 1)) };
     case ts.TypeFlags.Never:
       return { type: "never" };
     default:
-      throw new Error("未知の型");
+      throw new Error("未対応の型");
   }
 }
 
 
-//const source = "type Main<T>=T;";
-const source = "type Main={x:number,y:number}";
+const source = "type Main={x:{x:number}}";
 const host = new MyCompilerHost();
 host.addFile("lib.d.ts", libdts);
 host.addFile("main.ts", source);
 const program = ts.createProgram(["main.ts"], { strict: true }, host);
 const checker = program.getTypeChecker();
-
 // Visit every sourceFile in the program
 for (const sourceFile of program.getSourceFiles()) {
   if (!sourceFile.isDeclarationFile) {
@@ -165,7 +148,7 @@ for (const sourceFile of program.getSourceFiles()) {
       if (ts.isTypeAliasDeclaration(node) && node.name) {
         let symbol = checker.getSymbolAtLocation(node.name)!;
         const type = checker.getDeclaredTypeOfSymbol(symbol);
-        console.log(JSON.stringify(serializeType(type), undefined, 2));
+        console.log(JSON.stringify(serializeType(type, 0), undefined, 2));
       }
     });
   }
