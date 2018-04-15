@@ -147,7 +147,6 @@ function serializeType(type: ts.Type, count: number): Type {
     case ts.TypeFlags.Null:
       return { type: "null" };
     case ts.TypeFlags.Object:
-      const a = type.symbol!.members!;
       return {
         type: "object",
         members: Array.from(type.symbol!.members!.entries() as any as Iterable<[string, ts.Symbol]>)
@@ -161,12 +160,17 @@ function serializeType(type: ts.Type, count: number): Type {
     case ts.TypeFlags.Never:
       return { type: "never" };
     default:
-      throw new Error("未対応の型");
+      throw new Error("未対応の型:" + type.getFlags());
   }
 }
+//TODO:配列、mapping type、conditional
+const source = `
+type Hoge<T> = {
+  [P in keyof T]: T[P]|null;
+};
+type Main=Hoge<{x:number,y:number}>
+`;
 
-
-const source = "type Main={x:{x:number}}";
 const host = new MyCompilerHost();
 host.addFile("lib.d.ts", libdts);
 host.addFile("main.ts", source);
@@ -179,8 +183,10 @@ for (const sourceFile of program.getSourceFiles()) {
     ts.forEachChild(sourceFile, node => {
       if (ts.isTypeAliasDeclaration(node) && node.name) {
         let symbol = checker.getSymbolAtLocation(node.name)!;
-        const type = checker.getDeclaredTypeOfSymbol(symbol);
-        console.log(JSON.stringify(serializeType(type, 0), undefined, 2));
+        if (symbol.name == "Main") {
+          const type = checker.getDeclaredTypeOfSymbol(symbol);
+          console.log(JSON.stringify(serializeType(type, 0), undefined, 2));
+        }
       }
     });
   }
