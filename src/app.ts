@@ -87,7 +87,39 @@ class MyCompilerHost extends MyLanguageServiceHost implements ts.CompilerHost {
   }
 }
 
-function serializeType(type: ts.Type, count: number): any {
+type Type =
+  | AnyType
+  | StringType
+  | NumberType
+  | BooleanType
+  | StringLiteralType
+  | NumberLiteralType
+  | BooleanLiteralType
+  | SymbolType
+  | VoidType
+  | UndefinedType
+  | NullType
+  | ObjectType
+  | UnionType
+  | IntersectionType
+  | NeverType;
+type AnyType = { type: "any" };
+type StringType = { type: "string" };
+type NumberType = { type: "number" };
+type BooleanType = { type: "boolean" };
+type StringLiteralType = { type: "string-literal", value: string };
+type NumberLiteralType = { type: "number-literal", value: number };
+type BooleanLiteralType = { type: "boolean-literal", value: boolean };
+type SymbolType = { type: "symbol" };
+type VoidType = { type: "void" };
+type UndefinedType = { type: "undefined" };
+type NullType = { type: "null" };
+type ObjectType = { type: "object", members: { key: string, type: Type }[] };
+type UnionType = { type: "union", types: Type[] };
+type IntersectionType = { type: "intersection", types: Type[] };
+type NeverType = { type: "never" };
+
+function serializeType(type: ts.Type, count: number): Type {
   if (count > 1024) {
     throw new Error("型のネストが深すぎます");
   }
@@ -119,8 +151,8 @@ function serializeType(type: ts.Type, count: number): any {
       return {
         type: "object",
         members: Array.from(type.symbol!.members!.entries() as any as Iterable<[string, ts.Symbol]>)
-          .map<[string, any]>(([name, s]) => [name, serializeType(checker.getTypeOfSymbolAtLocation(s, s.valueDeclaration!), count + 1)])
-          .map(([name, type]) => ({ name, type }))
+          .map<[string, any]>(([key, s]) => [key, serializeType(checker.getTypeOfSymbolAtLocation(s, s.valueDeclaration!), count + 1)])
+          .map(([key, type]) => ({ key, type }))
       };
     case ts.TypeFlags.Union:
       return { type: "union", types: (type as ts.UnionType).types.map(x => serializeType(x, count + 1)) };
