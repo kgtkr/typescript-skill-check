@@ -166,12 +166,10 @@ function serializeType(type: ts.Type, count: number): Type {
       throw new Error("未対応の型:" + type.getFlags());
   }
 }
-//TODO:配列、conditional、タプル
+//TODO:配列、タプル
 const source = `
-type Hoge<T> = {
-  [P in keyof T]: T[P]|null;
-}&{z:string};
-type Main=Hoge<{x:number,y:number}>;
+type Hoge<T> = T extends number ? {x:"num"} : {y:"o"};
+type Main=Hoge<1>;
 `;
 
 const host = new MyCompilerHost();
