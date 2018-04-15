@@ -149,8 +149,11 @@ function serializeType(type: ts.Type, count: number): Type {
     case ts.TypeFlags.Object:
       return {
         type: "object",
-        members: Array.from(type.symbol!.members!.entries() as any as Iterable<[string, ts.Symbol]>)
-          .map<[string, any]>(([key, s]) => [key, serializeType(checker.getTypeOfSymbolAtLocation(s, s.valueDeclaration!), count + 1)])
+        members: checker.getPropertiesOfType(type)
+          .map<[string, Type]>(s => [
+            s.name,
+            serializeType(s.valueDeclaration !== undefined ? checker.getTypeOfSymbolAtLocation(s, s.valueDeclaration) : (s as any).type, count + 1)
+          ])
           .map(([key, type]) => ({ key, type }))
       };
     case ts.TypeFlags.Union:
@@ -163,12 +166,12 @@ function serializeType(type: ts.Type, count: number): Type {
       throw new Error("未対応の型:" + type.getFlags());
   }
 }
-//TODO:配列、mapping type、conditional
+//TODO:配列、conditional、タプル
 const source = `
 type Hoge<T> = {
   [P in keyof T]: T[P]|null;
-};
-type Main=Hoge<{x:number,y:number}>
+}&{z:string};
+type Main=Hoge<{x:number,y:number}>;
 `;
 
 const host = new MyCompilerHost();
